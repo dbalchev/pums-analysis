@@ -189,6 +189,7 @@ class AncestryField(CodeBasedField):
         "782": "Taiwanese",
         "785": "Vietnamese",
         "793": "Eurasian",
+        "794": "Amerasian",
         "795": "Asian",
         "799": "Other Asian",
         "800": "Australian",
@@ -224,6 +225,7 @@ class AncestryField(CodeBasedField):
         "929": "Pennsylvania German",
         "931": "Canadian",
         "935": "French Canadian",
+        "936": "Acadian",
         "937": "Cajun",
         "939": "American",
         "940": "United States",
@@ -234,4 +236,5 @@ class AncestryField(CodeBasedField):
         "997": "Other groups",
         "998": "Other responses",
         "999": "Not reported",
+        "-09": "Not Applicable",
     }
