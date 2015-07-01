@@ -13,6 +13,8 @@ class ModelField:
 
 class IntegerField(ModelField):
     def _create_from_str(self, string_repr):
+        if string_repr == "":
+            return -1
         return int(string_repr)
 
 
