@@ -1,4 +1,4 @@
-from modelclasses import CodeBasedField
+from base.fields import CodeBasedField
 
 
 class StateField(CodeBasedField):
