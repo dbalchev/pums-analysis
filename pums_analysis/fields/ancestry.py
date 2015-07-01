@@ -1,6 +1,7 @@
 from base.fields import CodeBasedField
 
-class Ancestry(CodeBasedField):
+
+class AncestryField(CodeBasedField):
     _codes = {
         "001": "Alsatian",
         "003": "Austrian",
