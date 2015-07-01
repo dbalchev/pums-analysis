@@ -9,6 +9,11 @@ class _ModelBase:
             setattr(new_obj, name, field_type(fields_dict))
         return new_obj
 
+    def __str__(self):
+        fields = ", ".join('"{}": "{}"'.format(name, getattr(self, name)) \
+            for name, _ in type(self)._fields)
+        return "{" + fields + "}"
+
 
 class _ModelMeta(type):
     def __new__(cls, name, bases, namespace, **kws):
