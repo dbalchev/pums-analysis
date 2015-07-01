@@ -7,7 +7,7 @@ class _ModelBase:
         return new_obj
 
 
-class _ModelField:
+class ModelField:
     def __init__(self, field_name):
         self._field_name = field_name
 
@@ -18,21 +18,21 @@ class _ModelField:
         raise NotImplementedError()
 
 
-class Integer(_ModelField):
+class Integer(ModelField):
     def _create_from_str(self, string_repr):
         return int(string_repr)
 
 
-class CodeBasedField(_ModelField):
+class CodeBasedField(ModelField):
     def _create_from_str(self, string_repr):
         return self._codes[string_repr]
 
 
 class _ModelMeta(type):
     def __new__(cls, name, bases, namespace, **kws):
-        fields = [x for x in namespace.items() if isinstance(x[1], _ModelField)]
+        fields = [x for x in namespace.items() if isinstance(x[1], ModelField)]
         namespace = {name:value for name,value in namespace.items() \
-            if not isinstance(value, _ModelField)}
+            if not isinstance(value, ModelField)}
         namespace["__slots__"] = tuple(f[0] for f in fields)
         new_class = type.__new__(cls, name, bases, namespace)
         new_class._fields = fields
