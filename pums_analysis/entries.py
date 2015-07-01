@@ -6,7 +6,7 @@ from pums_analysis.fields import JobField, DegreeField, StateField, SexField, An
 
 class Entry(Model):
     age = IntegerField("AGEP")
-    # occupation = JobField("OCCP02")
+    occupation = JobField("OCCP02")
     degree = DegreeField("FOD1P")
     state = StateField("ST")
     wage = IntegerField("WAGP")
