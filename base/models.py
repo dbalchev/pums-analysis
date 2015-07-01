@@ -14,6 +14,14 @@ class _ModelBase:
             for name, _ in type(self)._fields)
         return "{" + fields + "}"
 
+    def __setitem__(self, name, value):
+        setattr(self, name, value)
+
+    def _get_dict(self):
+        return {name:getattr(self, name) for name in type(self).__slots__}
+
+    def __reduce__(self):
+        return (type(self), (), None, None, iter(self._get_dict().items()))
 
 class _ModelMeta(type):
     def __new__(cls, name, bases, namespace, **kws):
