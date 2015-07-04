@@ -1,8 +1,8 @@
 from pickle import load
+from sklearn import naive_bayes, tree, metrics, linear_model, decomposition, svm
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.cross_validation import cross_val_score, StratifiedKFold
-from sklearn.linear_model import LogisticRegression
-from sklearn import naive_bayes, tree, metrics
+from sklearn.pipeline import make_pipeline
 from functools import partial
 import numpy as np
 import logging
@@ -25,15 +25,19 @@ feature_extractors = [
 
 estimators = [
     ("MultinomialNB", naive_bayes.MultinomialNB()),
-    ("Decision tree", tree.DecisionTreeClassifier(max_depth=7, class_weight="auto"))
+    ("BernoulliNB", naive_bayes.BernoulliNB()),
+    # ("Decision tree", tree.DecisionTreeClassifier(max_depth=7, class_weight="auto")),
+    ("LogisticRegression", linear_model.LogisticRegression(class_weight="auto")),
+    ("PCA 73 & SVM", make_pipeline(decomposition.PCA(), svm.SVC(class_weight="auto"))),
 ]
 
 PICKLE_FILE = "pus.pickle"
 
-def scoring_function(estimator, X, y):
-    predicted = estimator.predict(X)
-    return {metric_name: metric(y, predicted) \
-        for metric_name, metric in scoring_metrics}
+class ScoreKeeper:
+    def __init__(self):
+        self.scores = []
+
+
 
 logging.basicConfig(level="INFO")
 logging.info("unpickling")
@@ -57,12 +61,19 @@ for features_name, extractor in feature_extractors:
     # del entries
     for estimator_name, estimator in estimators:
         logging.info("scoring {} {}".format(features_name, estimator_name))
-        scores = cross_val_score(
+        scores = []
+        def f1_recall(estimator, X, y):
+            predicted = estimator.predict(X)
+            cu_score =  {metric_name: metric(y, predicted) \
+                for metric_name, metric in scoring_metrics}
+            scores.append(cu_score)
+            return np.mean(list(cu_score.values()))
+        cross_val_score(
             estimator,
             features,
             labels,
-            scoring = scoring_function,
+            scoring = f1_recall,
             cv=StratifiedKFold(labels, n_folds=10, shuffle=True)
         )
         print("scores for", features_name, estimator_name)
-        print("\n".join(map(str, scores)))
+        print("\n".join(map(str, score_keeper.scores)))
