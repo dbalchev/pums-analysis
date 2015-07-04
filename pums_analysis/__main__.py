@@ -1,5 +1,5 @@
 from pickle import load
-from sklearn import naive_bayes, tree, metrics, linear_model, decomposition, svm
+from sklearn import naive_bayes, tree, metrics, linear_model, decomposition, svm, ensemble
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.cross_validation import cross_val_score, StratifiedKFold
 from sklearn.pipeline import make_pipeline
@@ -33,8 +33,10 @@ estimators = [
     ("SGD unweighted", linear_model.SGDClassifier()),
     ("SGD auto-weighted", linear_model.SGDClassifier(class_weight="auto")),
     ("LogisticRegression", linear_model.LogisticRegression(class_weight="auto")),
-    # ("Decision tree", tree.DecisionTreeClassifier(max_depth=7, class_weight="auto")),
-    # ("linear SVM", svm.LinearSVC(class_weight="auto")),
+    # ("bagged BernoulliNB", ensemble.BaggingRegressor(naive_bayes.BernoulliNB())), #MemoryError
+    # ("TruncatedSVD 17 + BernoulliNB", make_pipeline(decomposition.TruncatedSVD(17, n_iter=32), naive_bayes.BernoulliNB())), #NaN
+    # ("Decision tree", tree.DecisionTreeClassifier(max_depth=7, class_weight="auto")), # too much time
+    # ("linear SVM", svm.LinearSVC(class_weight="auto")), # too much estimated time
 ]
 
 PICKLE_FILE = "pus.pickle"
@@ -63,7 +65,7 @@ for features_name, extractor in feature_extractors:
         logging.info("scoring {} {}".format(features_name, estimator_name))
         scores = []
         def f1_recall(estimator, X, y):
-            logging.info("scoring")
+            logging.info("scoring {}".format(len(scores)))
             predicted = estimator.predict(X)
             predicted = [int(entry.wage >= threshold) for entry in predicted]
             target    = [int(entry.wage >= threshold) for entry in y]
@@ -78,11 +80,10 @@ for features_name, extractor in feature_extractors:
             scoring = f1_recall,
             cv=StratifiedKFold(labels, n_folds=10, shuffle=True)
         )
-        print()
         scores_mean = \
             {metric_name: np.mean([score[metric_name] for score in scores])
              for metric_name, _ in scoring_metrics}
-        score_str = "scores for {} {}\n{}" \
+        score_str = "scores for {} {}\n{}\n" \
             .format(features_name, estimator_name,
                 " ".join(map(str, scores_mean.items())))
         print(score_str)
