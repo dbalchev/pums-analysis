@@ -9,6 +9,7 @@ import logging
 
 scoring_metrics = [
     ("f1", metrics.f1_score),
+    ("precision", metrics.precision_score),
     ("recall", metrics.recall_score),
 ]
 
@@ -20,15 +21,20 @@ def get_entry_dict(entry, features_to_remove):
 
 feature_extractors = [
     ("discriminatory features", partial(get_entry_dict, features_to_remove=["wage"])),
-    ("ethical features", partial(get_entry_dict, features_to_remove="wage sex ancestry state".split()))
+    ("ethical features", partial(get_entry_dict, features_to_remove="wage sex ancestry state".split())),
+    ("ethical +state features", partial(get_entry_dict, features_to_remove="wage sex ancestry".split())),
+    ("no sex features", partial(get_entry_dict, features_to_remove="wage sex".split())),
+    ("no ancestry features", partial(get_entry_dict, features_to_remove="wage ancestry".split())),
 ]
 
 estimators = [
     ("MultinomialNB", naive_bayes.MultinomialNB()),
     ("BernoulliNB", naive_bayes.BernoulliNB()),
+    ("SGD unweighted", linear_model.SGDClassifier()),
+    ("SGD auto-weighted", linear_model.SGDClassifier(class_weight="auto")),
+    ("LogisticRegression", linear_model.LogisticRegression(class_weight="auto")),
     # ("Decision tree", tree.DecisionTreeClassifier(max_depth=7, class_weight="auto")),
-    # ("LogisticRegression", linear_model.LogisticRegression(class_weight="auto")),
-    # ("SVM", svm.LinearSVC(class_weight="auto")),
+    # ("linear SVM", svm.LinearSVC(class_weight="auto")),
 ]
 
 PICKLE_FILE = "pus.pickle"
@@ -57,6 +63,7 @@ for features_name, extractor in feature_extractors:
         logging.info("scoring {} {}".format(features_name, estimator_name))
         scores = []
         def f1_recall(estimator, X, y):
+            logging.info("scoring")
             predicted = estimator.predict(X)
             predicted = [int(entry.wage >= threshold) for entry in predicted]
             target    = [int(entry.wage >= threshold) for entry in y]
@@ -71,5 +78,13 @@ for features_name, extractor in feature_extractors:
             scoring = f1_recall,
             cv=StratifiedKFold(labels, n_folds=10, shuffle=True)
         )
-        print("scores for", features_name, estimator_name)
-        print("\n".join(map(str, scores)))
+        print()
+        scores_mean = \
+            {metric_name: np.mean([score[metric_name] for score in scores])
+             for metric_name, _ in scoring_metrics}
+        score_str = "scores for {} {}\n{}" \
+            .format(features_name, estimator_name,
+                " ".join(map(str, scores_mean.items())))
+        print(score_str)
+        with open("results.txt", "a") as res_out:
+            res_out.write(score_str)
