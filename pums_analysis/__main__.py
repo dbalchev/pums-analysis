@@ -76,4 +76,4 @@ for features_name, extractor in feature_extractors:
             cv=StratifiedKFold(labels, n_folds=10, shuffle=True)
         )
         print("scores for", features_name, estimator_name)
-        print("\n".join(map(str, score_keeper.scores)))
+        print("\n".join(map(str, scores)))
