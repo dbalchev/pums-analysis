@@ -20,6 +20,9 @@ def get_entry_dict(entry, features_to_remove):
 
 feature_extractors = [
     ("discriminatory features", partial(get_entry_dict, features_to_remove=["wage"])),
+    ("no sex features", partial(get_entry_dict, features_to_remove="wage sex".split())),
+    ("no ancestry features", partial(get_entry_dict, features_to_remove="wage ancestry".split())),
+    ("ethical +state features", partial(get_entry_dict, features_to_remove="wage sex ancestry".split())),
     ("ethical features", partial(get_entry_dict, features_to_remove="wage sex ancestry state".split()))
 ]
 
@@ -27,8 +30,8 @@ estimators = [
     ("MultinomialNB", naive_bayes.MultinomialNB()),
     ("BernoulliNB", naive_bayes.BernoulliNB()),
     # ("Decision tree", tree.DecisionTreeClassifier(max_depth=7, class_weight="auto")),
-    ("LogisticRegression", linear_model.LogisticRegression(class_weight="auto")),
-    ("SparsePCA 73 & SVM", make_pipeline(decomposition.SparsePCA(73, max_iter=100), svm.LinearSVC(class_weight="auto"))),
+    # ("linear SVM", svm.LinearSVC(class_weight="auto")),
+    # ("LogisticRegression", linear_model.LogisticRegression(class_weight="auto")),
 ]
 
 PICKLE_FILE = "pus.pickle"
@@ -57,6 +60,7 @@ for features_name, extractor in feature_extractors:
         logging.info("scoring {} {}".format(features_name, estimator_name))
         scores = []
         def f1_recall(estimator, X, y):
+            logging.info("scoring")
             predicted = estimator.predict(X)
             cu_score =  {metric_name: metric(y, predicted) \
                 for metric_name, metric in scoring_metrics}
@@ -70,4 +74,6 @@ for features_name, extractor in feature_extractors:
             cv=StratifiedKFold(labels, n_folds=10, shuffle=True)
         )
         print("scores for", features_name, estimator_name)
-        print("\n".join(map(str, scores)))
+        f1 = np.mean([score["f1"] for score in scores])
+        recall = np.mean([score["recall"] for score in scores])
+        print("f1 = {}; recall = {}".format(f1, recall))
