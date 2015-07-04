@@ -27,8 +27,8 @@ estimators = [
     ("MultinomialNB", naive_bayes.MultinomialNB()),
     ("BernoulliNB", naive_bayes.BernoulliNB()),
     # ("Decision tree", tree.DecisionTreeClassifier(max_depth=7, class_weight="auto")),
-    ("LogisticRegression", linear_model.LogisticRegression(class_weight="auto")),
-    ("SparsePCA 73 & SVM", make_pipeline(decomposition.SparsePCA(73, max_iter=100), svm.LinearSVC(class_weight="auto"))),
+    # ("LogisticRegression", linear_model.LogisticRegression(class_weight="auto")),
+    # ("SVM", svm.LinearSVC(class_weight="auto")),
 ]
 
 PICKLE_FILE = "pus.pickle"
@@ -37,11 +37,11 @@ logging.basicConfig(level="INFO")
 logging.info("unpickling")
 with open(PICKLE_FILE, "rb") as i:
     entries = load(i)
+logging.info("{} entries unpickled".format(len(entries)))
 logging.info("extracting wages")
 wages = [entry.wage for entry in entries]
 logging.info("calculating 95th percentile of wages")
 threshold = np.percentile(wages, 95)
-del wages
 logging.info("calculating labels")
 labels = [int(entry.wage >= threshold) for entry in entries]
 # del entries
@@ -58,14 +58,16 @@ for features_name, extractor in feature_extractors:
         scores = []
         def f1_recall(estimator, X, y):
             predicted = estimator.predict(X)
-            cu_score =  {metric_name: metric(y, predicted) \
+            predicted = [int(entry.wage >= threshold) for entry in predicted]
+            target    = [int(entry.wage >= threshold) for entry in y]
+            cu_score =  {metric_name: metric(target, predicted) \
                 for metric_name, metric in scoring_metrics}
             scores.append(cu_score)
             return np.mean(list(cu_score.values()))
         cross_val_score(
             estimator,
             features,
-            labels,
+            wages,
             scoring = f1_recall,
             cv=StratifiedKFold(labels, n_folds=10, shuffle=True)
         )
