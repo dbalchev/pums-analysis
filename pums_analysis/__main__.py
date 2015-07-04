@@ -28,16 +28,10 @@ estimators = [
     ("BernoulliNB", naive_bayes.BernoulliNB()),
     # ("Decision tree", tree.DecisionTreeClassifier(max_depth=7, class_weight="auto")),
     ("LogisticRegression", linear_model.LogisticRegression(class_weight="auto")),
-    ("PCA 73 & SVM", make_pipeline(decomposition.PCA(), svm.SVC(class_weight="auto"))),
+    ("SparsePCA 73 & SVM", make_pipeline(decomposition.SparsePCA(73, max_iter=100), svm.LinearSVC(class_weight="auto"))),
 ]
 
 PICKLE_FILE = "pus.pickle"
-
-class ScoreKeeper:
-    def __init__(self):
-        self.scores = []
-
-
 
 logging.basicConfig(level="INFO")
 logging.info("unpickling")
