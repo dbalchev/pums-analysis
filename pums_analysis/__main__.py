@@ -9,6 +9,7 @@ import logging
 
 scoring_metrics = [
     ("f1", metrics.f1_score),
+    ("precision", metrics.precision_score),
     ("recall", metrics.recall_score),
 ]
 
@@ -20,18 +21,20 @@ def get_entry_dict(entry, features_to_remove):
 
 feature_extractors = [
     ("discriminatory features", partial(get_entry_dict, features_to_remove=["wage"])),
+    ("ethical features", partial(get_entry_dict, features_to_remove="wage sex ancestry state".split())),
+    ("ethical +state features", partial(get_entry_dict, features_to_remove="wage sex ancestry".split())),
     ("no sex features", partial(get_entry_dict, features_to_remove="wage sex".split())),
     ("no ancestry features", partial(get_entry_dict, features_to_remove="wage ancestry".split())),
-    ("ethical +state features", partial(get_entry_dict, features_to_remove="wage sex ancestry".split())),
-    ("ethical features", partial(get_entry_dict, features_to_remove="wage sex ancestry state".split()))
 ]
 
 estimators = [
     ("MultinomialNB", naive_bayes.MultinomialNB()),
     ("BernoulliNB", naive_bayes.BernoulliNB()),
+    ("SGD unweighted", linear_model.SGDClassifier()),
+    ("SGD auto-weighted", linear_model.SGDClassifier(class_weight="auto")),
+    ("LogisticRegression", linear_model.LogisticRegression(class_weight="auto")),
     # ("Decision tree", tree.DecisionTreeClassifier(max_depth=7, class_weight="auto")),
     # ("linear SVM", svm.LinearSVC(class_weight="auto")),
-    # ("LogisticRegression", linear_model.LogisticRegression(class_weight="auto")),
 ]
 
 PICKLE_FILE = "pus.pickle"
@@ -73,7 +76,13 @@ for features_name, extractor in feature_extractors:
             scoring = f1_recall,
             cv=StratifiedKFold(labels, n_folds=10, shuffle=True)
         )
-        print("scores for", features_name, estimator_name)
-        f1 = np.mean([score["f1"] for score in scores])
-        recall = np.mean([score["recall"] for score in scores])
-        print("f1 = {}; recall = {}".format(f1, recall))
+        print()
+        scores_mean = \
+            {metric_name: np.mean([score[metric_name] for score in scores])
+             for metric_name, _ in scoring_metrics}
+        score_str = "scores for {} {}\n{}" \
+            .format(features_name, estimator_name,
+                " ".join(map(str, scores_mean.items())))
+        print(score_str)
+        with open("results.txt", "a") as res_out:
+            res_out.write(score_str)
