@@ -1,4 +1,4 @@
-from pickle import load
+from pickle import load, dump
 from sklearn import naive_bayes, tree, metrics, linear_model, decomposition, svm, ensemble
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.cross_validation import cross_val_score, StratifiedKFold
@@ -6,6 +6,7 @@ from sklearn.pipeline import make_pipeline
 from functools import partial
 import numpy as np
 import logging
+import pathlib
 
 scoring_metrics = [
     ("f1", metrics.f1_score),
@@ -42,9 +43,17 @@ estimators = [
 PICKLE_FILE = "pus.pickle"
 
 logging.basicConfig(level="INFO")
-logging.info("unpickling")
-with open(PICKLE_FILE, "rb") as i:
-    entries = load(i)
+if not pathlib.Path(PICKLE_FILE).exists():
+    from .reader import read_records_from_file
+    from .entries import Entry
+    logging.info("creating {}".format(PICKLE_FILE))
+    entries = list(read_records_from_file("csv_pus.zip", Entry))
+    with open(PICKLE_FILE, "wb") as o:
+        dump(entries, o)
+else:
+    logging.info("unpickling")
+    with open(PICKLE_FILE, "rb") as i:
+        entries = load(i)
 logging.info("{} entries unpickled".format(len(entries)))
 logging.info("extracting wages")
 wages = [entry.wage for entry in entries]
